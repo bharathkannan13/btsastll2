@@ -17,10 +17,14 @@ import {
  * 1. Firebase configuration
  *************************************/
 // ======= FIREBASE CONFIG PLACEHOLDER =======
-const firebaseConfig = {
-  apiKey: "YOUR_KEY",
-  authDomain: "YOUR_AUTH",
-  projectId: "YOUR_PID",
+const firebaseConfig = {  
+  apiKey: "AIzaSyAF0x2ZEhGJLuzp_n4QUNS6DXi8gJrOvQE",  
+  authDomain: "btsa-4e5bd.firebaseapp.com",  
+  projectId: "btsa-4e5bd",  
+  storageBucket: "btsa-4e5bd.firebasestorage.app",  
+  messagingSenderId: "765273457217",  
+  appId: "1:765273457217:web:fc730ea9dc11a535bcbcc0",  
+  measurementId: "G-LB7171Q8JR"  
 };
 
 /*************************************
@@ -148,13 +152,20 @@ function toggleForm(disabled) {
 /*************************************
  * 7. Rendering functions
  *************************************/
-function renderGrid(bookedSet) {
+function formatDateTime(ts) {
+  if (!ts) return "";
+  const d = new Date(ts);
+  return d.toLocaleString();
+}
+
+function renderGrid(bookedMap) {
   grid.innerHTML = "";
 
   const avail = [];
   for (let i = 1; i <= TOTAL_STALLS; i++) {
     const idStr = i.toString();
-    const booked = bookedSet.has(idStr);
+    const booking = bookedMap.get(idStr);
+    const booked = !!booking;
     if (!booked) avail.push(i);
 
     const cell = document.createElement("div");
@@ -162,6 +173,23 @@ function renderGrid(bookedSet) {
     cell.setAttribute("role", "gridcell");
     cell.dataset.id = idStr;
     cell.textContent = i;
+
+    if (booked) {
+      // Show company and date/time
+      const info = document.createElement("div");
+      info.className = "booking-info";
+      info.innerHTML = `<small>${booking.company}<br>${formatDateTime(booking.timestamp)}</small>`;
+      cell.appendChild(info);
+      // Release button
+      const releaseBtn = document.createElement("button");
+      releaseBtn.textContent = "Release";
+      releaseBtn.className = "release-btn";
+      releaseBtn.onclick = async (e) => {
+        e.stopPropagation();
+        await releaseStall(idStr);
+      };
+      cell.appendChild(releaseBtn);
+    }
     grid.appendChild(cell);
   }
 
@@ -171,7 +199,7 @@ function renderGrid(bookedSet) {
   ph.value = "";
   ph.textContent = "Select stall";
   ph.selected = true;
-  ph.disabled = true; // still allows opening in all browsers
+  ph.disabled = true;
   stallSelect.appendChild(ph);
 
   avail.forEach((n) => {
@@ -189,14 +217,31 @@ function renderGrid(bookedSet) {
   }
 }
 
+async function releaseStall(stallNo) {
+  try {
+    const ref = _doc(db, "stalls", stallNo);
+    await _runTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists()) throw new Error("notbooked");
+      tx.set(ref, undefined); // Remove booking
+    });
+    setStatus(`Stall ${stallNo} released.`, "success");
+  } catch (err) {
+    setStatus("Release failed – please retry.", "error");
+    console.error(err);
+  }
+}
+
 /*************************************
  * 8. Real-time snapshot listener
  *************************************/
 (function initRealtime() {
   const col = _collection(db, "stalls");
   _onSnapshot(col, (snap) => {
-    const bookedSet = new Set(snap.docs.map((d) => d.id));
-    renderGrid(bookedSet);
+    // Map: id -> booking data
+    const bookedMap = new Map();
+    snap.docs.forEach((d) => bookedMap.set(d.id, d.data()));
+    renderGrid(bookedMap);
   });
 })();
 
