@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>BTSA Stall Booking</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Header -->
+    <header class="py-16" style="text-align:center;">
+      <h1>BTSA Stall Booking</h1>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container py-16">
+      <!-- Booking Form -->
+      <form
+        id="bookingForm"
+        class="flex flex-wrap gap-8 items-center justify-center mb-8"
+      >
+        <input
+          id="company"
+          type="text"
+          class="form-control"
+          placeholder="Company Name"
+          aria-label="Company Name"
+          required
+        />
+        <select
+          id="stallSelect"
+          class="form-control"
+          aria-label="Select Stall"
+          required
+        ></select>
+        <button type="submit" id="bookBtn" class="btn btn--primary">
+          Book Stall
+        </button>
+      </form>
+
+      <!-- Status Message -->
+      <p id="statusMsg" role="status" aria-live="polite" class="mb-16"></p>
+
+      <!-- Stall Grid -->
+      <div
+        id="grid"
+        role="grid"
+        aria-label="Stall availability grid"
+        class="flex flex-wrap justify-center"
+      ></div>
+    </main>
+
+    <!-- App Logic -->
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
